@@ -1,6 +1,6 @@
 # PublishingWithArcpy
 For UC demonstration
-1. Download all listed files and subfolders
+1. Download the .7z onto local machine, and unzip it.
 2. Modify the secure\AGO_pass.txt with your own username and password
 3. Rename the service name in the PublishLayersAsWTL.py and PublishLayersAsWFL.py files
 4. Rename the baseline JSON with the new service name
