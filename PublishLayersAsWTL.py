@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
-"""PublishLayersAsWTL.py: shares a list of layers as a web tiled layer to portal."""
+"""
+Name: PublishLayersAsWTL.py
+Description: shares a list of layers as a web tiled layer to portal.
+Requirements: Signed onto ArcGIS online or enterprise, and set as active
+"""
 
-import arcpy, json, os
+import arcpy, json, os, time, datetime
 from urllib.request import urlopen
 from urllib.parse import urlencode
 
@@ -18,7 +22,7 @@ __status__ = "Production"
 # list the paths for the input aprx, output sddraft and sd files in variables
 cwd = os.getcwd()
 aprxPath = r'Project/USCities/USCities.aprx'
-serviceName = 'bb_USHighway_UC2017'
+serviceName = 'USHighway_UC2017'
 sddraftPath = r"Output/%s.sddraft" % (serviceName)
 sdPath = cwd + r"/Output/%s.sd" % (serviceName)
 observedTileFile = r'Output/observed_' + serviceName + '_tile3_1_0.png'
@@ -55,9 +59,23 @@ arcpy.StageService_server(sddraftPath, sdPath)
 '''
 arcpy.UploadServiceDefinition_server(sdPath, 'My Hosted Services', in_public = "PUBLIC", in_organization = "SHARE_ORGANIZATION")
 
-# Creates and updates tiles in an existing web tile layer cache. 
+''' Creates and updates tiles in an existing map or image service cache. This tool is used to create new tiles, replace missing tiles, overwrite outdated tiles, and delete tiles.
+    Syntax  = ManageMapServerCacheTiles_server (input_service, scales, update_mode, {num_of_caching_service_instances},
+                                                                                 {area_of_interest}, {update_extent}, {wait_for_job_completion})
+'''
+starttime = time.clock()
 input_service = r'https://tiles.arcgis.com/tiles/EguFTd9xPXEoDtC7/arcgis/rest/services/' + serviceName + r'/MapServer'
-arcpy.ManageMapServerCacheTiles_server(input_service, [73957191, 36978595, 18489298], "RECREATE_ALL_TILES")
+scales = [73957191, 36978595]
+updateMode = "RECREATE_ALL_TILES" # param has to be a member of RECREATE_ALL_TILES | DELETE_TILES
+numOfCachingServiceInstances = 2
+#
+# the cache generation process is being timed
+#
+arcpy.ManageMapServerCacheTiles_server(input_service, scales, updateMode, numOfCachingServiceInstances)
+#
+finishtime = time.clock()
+elapsedtime = finishtime - starttime
+print("Created tiles in " + str(elapsedtime) + " sec(s)")
 
 ''' Getting the token
 '''
@@ -76,10 +94,13 @@ query_string = urlencode(query_dict1)
 tokenStr = json.loads(urlopen(token_url + "?f=json", str.encode(query_string)).read().decode('utf-8'))['token']
 
 '''  Validation - Save the tile image to local disk
+    http:// <mapservice-url>/tile/<level>/<row>/<column> (required capability: map)
+    if the tiled image does not exist, Python will throw "urllib.error.HTTPError: HTTP Error 404: Not Found"
 '''
 tile_url = "https://tiles.arcgis.com/tiles/EguFTd9xPXEoDtC7/arcgis/rest/services/%s/MapServer/tile/3/1/0?cacheKey=92d45a007db841cd&token=" % (serviceName)
 f = open(observedTileFile,'wb')
 data = urlopen(tile_url + tokenStr).read()
 f.write(data)
 f.close()
+print("Tiled image has been downloaded as " + observedTileFile + ". Please compare with the baseline to validate.")
 # end

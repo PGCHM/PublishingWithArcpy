@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
-"""PublishMapAsWFL.py: shares a map as a web feature layer to ArcGIS Online."""
+"""
+Name: PublishMapAsWFL.py
+Description: shares a map as a web feature layer to ArcGIS Online.
+Requirements: Signed onto ArcGIS online or enterprise, and set as active
+"""
 
 import arcpy, json, os
 from urllib.request import urlopen
@@ -18,12 +22,12 @@ __status__ = "Production"
 # list the paths for the input aprx, output sddraft and sd files in variables
 cwd = os.getcwd()
 aprxPath = cwd + r'\Project\USCities\USCities.aprx'
-serviceName = 'bb_USCities_UC2017'
+serviceName = 'USCities_UC2017'
 sddraftPath = cwd + r"\Output\%s.sddraft" % (serviceName)
 sdPath = cwd + r"\Output\%s.sd" % (serviceName)
 restEndPoint = "https://services.arcgis.com/EguFTd9xPXEoDtC7/arcgis/rest/services/"
-queryCriteria = "where=&objectIds=1&time=&geometry=&geometryType=esriGeometryEnvelope&inSR=&spatialRel=esriSpatialRelIntersects&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=&returnGeometry=true&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none"
-baseJSONFile = r'baselines\base_' + serviceName + '_queryResult_Id1.json'
+queryCriteria = "objectIds=1"
+baseJSONFile = r'baselines\base_USCities_UC2017_queryResult_Id1.json'
 
 # Maintain a reference of an ArcGISProject object pointing to your project
 aprx = arcpy.mp.ArcGISProject(aprxPath)
@@ -69,6 +73,7 @@ query_string = urlencode(query_dict1)
 tokenStr = json.loads(urlopen(token_url + "?f=json", str.encode(query_string)).read().decode('utf-8'))['token']
 
 '''  Validation - Check if the service published contains "city_name" in layers[0]
+    http://<featurelayer-url>/query (required capability: query)
 '''
 test_json = restEndPoint + serviceName + "/FeatureServer/0/query?" + queryCriteria + "&f=pjson&token=" + tokenStr
 # Get request and store as bytes
